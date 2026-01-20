@@ -17,3 +17,8 @@ prod = [
     "asyncpg>=0.31.0",
     "tortoise-orm>=0.25.3",
 ]
+
+[tool.aerich]
+tortoise_orm = "app.database.TORTOISE_ORM"
+location = "./migrations"
+src_folder = "./."
