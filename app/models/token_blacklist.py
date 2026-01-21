@@ -1,10 +1,15 @@
 from tortoise import fields
 from tortoise.models import Model
 
+
 class TokenBlacklist(Model):
     id = fields.IntField(pk=True)
-    token = fields.CharField(max_length=100)
-    expired_at = fields.CharField(max_length=100)
+
+    # JWT는 길이가 길 수 있어서 TextField 추천
+    token = fields.TextField()
+
+    # 만료시간은 날짜 타입으로 (UTC 기준 저장 추천)
+    expired_at = fields.DatetimeField()
 
     user = fields.ForeignKeyField(
         "models.User",
@@ -14,4 +19,3 @@ class TokenBlacklist(Model):
 
     class Meta:
         table = "token_blacklist"
-

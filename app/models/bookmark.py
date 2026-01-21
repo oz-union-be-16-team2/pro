@@ -1,6 +1,6 @@
+# app/models/bookmark.py
 from tortoise import fields
 from tortoise.models import Model
-
 
 class Bookmark(Model):
     id = fields.IntField(pk=True)
@@ -12,7 +12,7 @@ class Bookmark(Model):
     )
     quote = fields.ForeignKeyField(
         "models.Quote",
-        related_name="bookmarks",
+        related_name="bookmarked_by",
         on_delete=fields.CASCADE,
     )
 
@@ -20,5 +20,4 @@ class Bookmark(Model):
 
     class Meta:
         table = "bookmarks"
-        # UNIQUE(user_id, quote_id)
-        unique_together = (("user", "quote"),)
+        unique_together = ("user", "quote")
