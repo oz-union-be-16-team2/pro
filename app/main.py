@@ -1,6 +1,5 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi.staticfiles import StaticFiles
 
 from fastapi import FastAPI
 from tortoise import Tortoise
@@ -28,4 +27,3 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(v1_router)
-app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
