@@ -5,14 +5,62 @@ RUN_IN_TRANSACTION = True
 
 async def upgrade(db: BaseDBAsyncClient) -> str:
     return """
-        ALTER TABLE "token_blacklist" ALTER COLUMN "expired_at" TYPE TIMESTAMPTZ USING "expired_at"::TIMESTAMPTZ;
-        ALTER TABLE "token_blacklist" ALTER COLUMN "token" TYPE TEXT USING "token"::TEXT;"""
+        CREATE TABLE IF NOT EXISTS "questions" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "question_text" TEXT NOT NULL,
+    "is_active" BOOL NOT NULL DEFAULT True,
+    "category" VARCHAR(50)
+);
+CREATE TABLE IF NOT EXISTS "quotes" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "content" TEXT NOT NULL,
+    "author" VARCHAR(255),
+    "is_active" BOOL NOT NULL DEFAULT True,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS "users" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "username" VARCHAR(50) NOT NULL UNIQUE,
+    "password_hash" VARCHAR(100) NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS "bookmarks" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "quote_id" INT NOT NULL REFERENCES "quotes" ("id") ON DELETE CASCADE,
+    "user_id" INT NOT NULL REFERENCES "users" ("id") ON DELETE CASCADE,
+    CONSTRAINT "uid_bookmarks_user_id_176fbb" UNIQUE ("user_id", "quote_id")
+);
+CREATE TABLE IF NOT EXISTS "diary" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "title" VARCHAR(100) NOT NULL,
+    "content" TEXT NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "users_id" INT NOT NULL REFERENCES "users" ("id") ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "token_blacklist" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "token" TEXT NOT NULL,
+    "expired_at" TIMESTAMPTZ NOT NULL,
+    "user_id" INT NOT NULL REFERENCES "users" ("id") ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "user_questions" (
+    "id" BIGSERIAL NOT NULL PRIMARY KEY,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "question_id" INT NOT NULL REFERENCES "questions" ("id") ON DELETE CASCADE,
+    "user_id" INT NOT NULL REFERENCES "users" ("id") ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "aerich" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "version" VARCHAR(255) NOT NULL,
+    "app" VARCHAR(100) NOT NULL,
+    "content" JSONB NOT NULL
+);"""
 
 
 async def downgrade(db: BaseDBAsyncClient) -> str:
     return """
-        ALTER TABLE "token_blacklist" ALTER COLUMN "expired_at" TYPE VARCHAR(100) USING "expired_at"::VARCHAR(100);
-        ALTER TABLE "token_blacklist" ALTER COLUMN "token" TYPE VARCHAR(100) USING "token"::VARCHAR(100);"""
+        """
 
 
 MODELS_STATE = (
