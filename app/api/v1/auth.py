@@ -1,27 +1,28 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.models.user import User
-from app.schemas.user import UserCreate, UserRead, TokenResponse
+from app.schemas.user import UserCreate, UserRead, TokenResponse, LoginRequest
 from app.core.security import verify_password, create_access_token, decode_access_token
 from app.services.user_service import create_user
 
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-# Swagger에서 "Authorize" 버튼 눌렀을 때 들어오는 토큰 소스
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+# ✅ Swagger Authorize: Bearer 토큰 한 칸만 뜨게 하는 방식
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 # -------------------------
 # Dependency: get_current_user
 # -------------------------
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> User:
     """
     Authorization: Bearer <token> 에서 토큰을 꺼내서
     검증 -> sub(username)로 User 조회 -> User 반환
@@ -31,6 +32,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if credentials is None or not credentials.credentials:
+        raise credentials_exception
+
+    token = credentials.credentials
 
     payload = decode_access_token(token)  # 실패하면 None
     if payload is None:
@@ -83,18 +89,18 @@ async def signup(payload: UserCreate):
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
 )
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(payload: LoginRequest):
     """
     POST /api/v1/auth/login
-    - OAuth2PasswordRequestForm 사용 (Swagger 테스트 쉬움)
+    - JSON Body로 username/password만 받음
     - username/password 검증
     - Access Token 발급
     """
-    user = await User.get_or_none(username=form_data.username)
+    user = await User.get_or_none(username=payload.username)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
-    if not verify_password(form_data.password, user.password_hash):
+    if not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     token = create_access_token(subject=user.username)

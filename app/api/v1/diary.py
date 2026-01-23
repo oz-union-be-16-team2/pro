@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.dependencies.auth import get_current_user  # 너희 실제 경로 유지
+from app.dependencies.auth import get_current_user
 from app.repositories.diary_repo import DiaryRepository
 from app.schemas.diary import (
     DiaryCreate,
@@ -22,27 +22,31 @@ async def create_diary(
     return await repo.create(user_id=current_user.id, data=data)
 
 
-# ✅ 내 일기 목록 (pagination)  ← 네가 만든 핵심 기능
+# ✅ 내 일기 목록 (pagination)
 @router.get("/me", response_model=DiaryListResponse)
 async def list_my_diaries(
-    limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
     current_user=Depends(get_current_user),
 ):
+    calculated_offset = (page - 1) * size
+
     data, total = await repo.list_by_user(
         user_id=current_user.id,
-        limit=limit,
-        offset=offset,
+        limit=size,
+        offset=calculated_offset,
     )
+
     return {
         "data": data,
-        "limit": limit,
-        "offset": offset,
+        "page": page,
+        "size": size,
         "total": total,
+        "total_pages": (total + size - 1) // size,
     }
 
 
-# ✅ 내 일기 단건 조회 (선택이지만 거의 필수)
+# ✅ 내 일기 단건 조회
 @router.get("/{diary_id}", response_model=DiaryResponse)
 async def get_my_diary(
     diary_id: int,
@@ -77,4 +81,5 @@ async def delete_diary(
     if not diary:
         raise HTTPException(status_code=404, detail="Diary not found")
     await repo.delete(diary=diary)
-    return {"ok": True}
+    return {"deleted": True}
+

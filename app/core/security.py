@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from jose import jwt, JWTError
+from app.core.config import settings  # ✅ 추가
 from passlib.context import CryptContext
 
 # ⚠️ 실서비스면 반드시 .env로 빼야 함
@@ -38,7 +39,7 @@ def create_access_token(subject: str):
     to_encode = {"sub": subject}
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=ALGORITHM)
 
 
 def decode_access_token(token: str) -> dict:
@@ -46,7 +47,8 @@ def decode_access_token(token: str) -> dict:
     JWT 디코딩 (get_current_user에서 사용)
     """
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         return payload
     except JWTError:
         raise
+
