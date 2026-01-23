@@ -1,20 +1,27 @@
-# app/dependencies/auth.py
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt, JWTError
 
 from app.core.config import settings
 from app.models.user import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+# ✅ Swagger Authorize: Bearer 토큰 한 칸만
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if credentials is None or not credentials.credentials:
+        raise credentials_exception
+
+    token = credentials.credentials
 
     try:
         payload = jwt.decode(

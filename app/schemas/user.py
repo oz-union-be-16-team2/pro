@@ -1,34 +1,27 @@
-from pydantic import BaseModel, Field
-from datetime import datetime
+from __future__ import annotations
 
+from pydantic import BaseModel
 
-# -------------------------
-# Request Schemas
-# -------------------------
 
 class UserCreate(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
-    password: str = Field(..., min_length=8)
-
-
-class UserLogin(BaseModel):
     username: str
     password: str
 
 
-# -------------------------
-# Response Schemas
-# -------------------------
+class UserRead(BaseModel):
+    id: int
+    username: str
+
+    class Config:
+        from_attributes = True
+
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
 
-class UserRead(BaseModel):
-    id: int
+# ✅ 추가: 로그인 요청 바디 (Swagger에서 username/password만 보이게)
+class LoginRequest(BaseModel):
     username: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
+    password: str

@@ -64,12 +64,6 @@ async def get_random_question(
     if payload.category:
         qs = qs.filter(category=payload.category)
 
-    # ✅ 중복 방지: 이미 받은 question_id 제외
-    served_ids = await UserQuestion.filter(user_id=current_user.id).values_list(
-        "question_id", flat=True
-    )
-    if served_ids:
-        qs = qs.exclude(id__in=list(served_ids))
 
     total = await qs.count()
     if total == 0:
