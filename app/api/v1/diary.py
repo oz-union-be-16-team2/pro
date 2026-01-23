@@ -82,4 +82,4 @@ async def delete_diary(
     if not diary:
         raise HTTPException(status_code=404, detail="Diary not found")
     await repo.delete(diary=diary)
-    return {"Diary was deleted": True}
+    return {"deleted": True}
