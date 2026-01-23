@@ -20,10 +20,12 @@ class DiaryResponse(BaseModel):
 
     class Config:
         from_attributes = True
-        
 
+
+# ✅ A안: page/size 기반으로 변경 (limit/offset 제거)
 class DiaryListResponse(BaseModel):
     data: list[DiaryResponse]
-    limit: int
-    offset: int
+    page: int
+    size: int
     total: int
+    total_pages: int
